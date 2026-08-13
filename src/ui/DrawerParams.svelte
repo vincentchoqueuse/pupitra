@@ -5,6 +5,7 @@
   // stays visible.
   import { app, manifest, setDrawer, validationMessage } from '../core/store.svelte.js';
   import { STR } from '../core/strings.js';
+  import { clickOutside } from '../core/click-outside.js';
   import ParamControl from './ParamControl.svelte';
   import Icon from './Icon.svelte';
 
@@ -22,7 +23,12 @@
   }
 </script>
 
-<aside class="drawer" class:open={app.drawer} aria-hidden={!app.drawer}>
+<aside
+  class="drawer"
+  class:open={app.drawer}
+  aria-hidden={!app.drawer}
+  use:clickOutside={{ enabled: app.drawer, handler: () => setDrawer(false) }}
+>
   {#if m}
     <h2>
       <span class="ttl"><Icon name="settings" size={15} /> {STR.PARAMETERS}</span>

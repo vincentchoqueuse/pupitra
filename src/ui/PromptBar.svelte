@@ -7,6 +7,7 @@
   import { app, manifest, visiblePills, maskedSet } from '../core/store.svelte.js';
   import { STR } from '../core/strings.js';
   import { formatValue } from '../core/scales.js';
+  import { clickOutside } from '../core/click-outside.js';
   import ParamControl from './ParamControl.svelte';
   import Icon from './Icon.svelte';
 
@@ -15,7 +16,6 @@
   const masked = $derived(maskedSet());
 
   let openKey = $state(null);
-  let barEl = $state(null);
 
   function pillText(key) {
     const spec = m.params[key];
@@ -34,19 +34,18 @@
     openKey = openKey === key ? null : key;
   }
 
-  function onWindowPointerDown(e) {
-    if (openKey && barEl && !barEl.contains(e.target)) openKey = null;
-  }
-
   function onWindowKeydown(e) {
     if (e.key === 'Escape' && openKey) openKey = null;
   }
 </script>
 
-<svelte:window onpointerdown={onWindowPointerDown} onkeydown={onWindowKeydown} />
+<svelte:window onkeydown={onWindowKeydown} />
 
 {#if m && pills.length > 0}
-  <div class="promptbar" bind:this={barEl}>
+  <div
+    class="promptbar"
+    use:clickOutside={{ enabled: !!openKey, handler: () => (openKey = null) }}
+  >
     <div class="pills">
       {#each pills as key (key)}
         <span class="pill-wrap">
