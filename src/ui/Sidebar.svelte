@@ -4,6 +4,7 @@
   import { subjects } from '../core/registry.js';
   import { STR } from '../core/strings.js';
   import { writePref } from '../core/prefs.js';
+  import { clickOutside } from '../core/click-outside.js';
   import { PALETTES, pal, setDataPalette } from '../core/palette.svelte.js';
   import Icon from './Icon.svelte';
   import AppIcon from './AppIcon.svelte';
@@ -77,7 +78,11 @@
   </button>
 {/snippet}
 
-<aside class="sidebar" class:collapsed={!app.ui.sidebar}>
+<aside
+  class="sidebar"
+  class:collapsed={!app.ui.sidebar}
+  use:clickOutside={{ enabled: app.ui.narrow && app.ui.sidebar, handler: toggleSidebar }}
+>
   {#if app.ui.sidebar}
     <div class="side-top">
       <!-- the brand is the way home: it opens the catalogue page (#/) -->

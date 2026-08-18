@@ -5,6 +5,7 @@
   import { app } from '../core/store.svelte.js';
   import { STR } from '../core/strings.js';
   import { formatValue } from '../core/scales.js';
+  import { clickOutside } from '../core/click-outside.js';
   import Icon from './Icon.svelte';
 
   const entries = $derived(Object.entries(app.result.observables ?? {}));
@@ -65,7 +66,12 @@
   }
 </script>
 
-<div class="inspector" role="dialog" aria-label={STR.INSPECTOR}>
+<div
+  class="inspector"
+  role="dialog"
+  aria-label={STR.INSPECTOR}
+  use:clickOutside={{ handler: () => (app.ui.inspector = false) }}
+>
   <h2>
     <span>{STR.OBSERVABLES}</span>
     <button onclick={() => (app.ui.inspector = false)} title={STR.CLOSE}>

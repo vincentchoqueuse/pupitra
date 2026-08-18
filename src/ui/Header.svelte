@@ -10,6 +10,7 @@
   import { subjects } from '../core/registry.js';
   import { STR } from '../core/strings.js';
   import { patchHashQuery } from '../core/router.js';
+  import { clickOutside } from '../core/click-outside.js';
   import Icon from './Icon.svelte';
   import QrCode from './QrCode.svelte';
 
@@ -24,8 +25,6 @@
   let menuOpen = $state(false);
   let qrOpen = $state(false);
   let copied = $state(false);
-  let pickerEl = $state(null);
-  let qrEl = $state(null);
 
   // live through replaceState updates (no hashchange event while dragging)
   const hash = $derived(m ? currentHash() : '#/');
@@ -67,11 +66,6 @@
     } catch {}
   }
 
-  function onWindowPointerDown(e) {
-    if (menuOpen && pickerEl && !pickerEl.contains(e.target)) menuOpen = false;
-    if (qrOpen && qrEl && !qrEl.contains(e.target)) qrOpen = false;
-  }
-
   function onWindowKeydown(e) {
     if (e.key === 'Escape') {
       menuOpen = false;
@@ -80,7 +74,7 @@
   }
 </script>
 
-<svelte:window onpointerdown={onWindowPointerDown} onkeydown={onWindowKeydown} />
+<svelte:window onkeydown={onWindowKeydown} />
 
 <header class="header">
   <div class="left">
@@ -100,7 +94,10 @@
   </div>
 
   <div class="right">
-    <div class="preset-picker" bind:this={pickerEl}>
+    <div
+      class="preset-picker"
+      use:clickOutside={{ enabled: menuOpen, handler: () => (menuOpen = false) }}
+    >
       {#if m?.presets.length}
         <!-- The scene's rank is DERIVED, here and in the list below, and never
              written into the title. It used to be typed into the title itself
@@ -131,7 +128,10 @@
     </button>
     <!-- QR of the scene URL — stays available in presentation mode, where a
          lecture hall scans it from the projector -->
-    <div class="qr-anchor" bind:this={qrEl}>
+    <div
+      class="qr-anchor"
+      use:clickOutside={{ enabled: qrOpen, handler: () => (qrOpen = false) }}
+    >
       <button class="icon-btn" class:on={qrOpen} onclick={() => (qrOpen = !qrOpen)} title={STR.QR_CODE}>
         <Icon name="qr-code" size={15} />
       </button>
