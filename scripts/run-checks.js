@@ -486,8 +486,8 @@ const RETIRED_SYMBOLS = new Map([
 /** Word-shaped param names, the closed list. A symbol is not a word. */
 const NAME_WORDS = new Set([
   'activation', 'algorithm', 'basis', 'code', 'dataset', 'den', 'distribution', 'dither',
-  'equalizer', 'family', 'function', 'grid', 'image', 'input', 'mapping', 'method', 'mode',
-  'modulation', 'order', 'shape',
+  'equalizer', 'family', 'function', 'grid', 'image', 'input', 'kernel', 'mapping', 'method',
+  'mode', 'modulation', 'order', 'shape',
   'key', 'num', 'outlier', 'output', 'pulse', 'signal', 'source', 'sources', 'stage', 'standardize',
   'structure', 'system', 'table', 'target', 'tracking', 'wavelet', 'window', 'zero-padding',
 ]);
