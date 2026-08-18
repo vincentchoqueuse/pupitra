@@ -169,7 +169,7 @@ export function compute({ N, mu, seed }) {
 `
   : `// TODO — replace the dummy curve with the experiment's science.
 // PURE and stateless — runs in a worker. Fully deterministic: no generator,
-// hence no `random: true` in the manifest and no seed in the signature.
+// hence no 'random: true' in the manifest and no seed in the signature.
 
 /** @param {{a: number}} params */
 export function compute({ a }) {
