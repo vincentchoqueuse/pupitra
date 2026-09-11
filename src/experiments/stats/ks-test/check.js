@@ -74,7 +74,7 @@ export const checks = [
     category: 'numeric',
     run() {
       let worst = 0;
-      for (let x = 0.3; x < 2.5; x += 0.1) {
+      for (let x = 0.05; x < 2.5; x += 0.05) {
         const h = 1e-5;
         const diff = (kolmogorovQ(x - h) - kolmogorovQ(x + h)) / (2 * h);
         worst = Math.max(worst, Math.abs(diff - kolmogorovDensity(x)));
@@ -179,6 +179,44 @@ export const checks = [
       const mean = sum / M;
       const tol = (4 * (1 / Math.sqrt(12))) / Math.sqrt(M); // SE of a mean of U(0,1)
       return { ok: Math.abs(mean - 0.5) < tol, detail: `mean=${mean.toFixed(4)} (tol ${tol.toFixed(4)})` };
+    },
+  },
+  {
+    name: 'the two series MEET at the switch, and Q is monotone from 0.005 on',
+    category: 'numeric',
+    run() {
+      // Regression guard: the alternating series oscillates below x ≈ 1 and
+      // once drew a non-monotone CDF near the origin. The theta branch now
+      // owns that region; the two must agree where they hand over, and the
+      // assembled function must decrease everywhere.
+      const seam = Math.abs(
+        1 - (Math.sqrt(2 * Math.PI) / 1.18) * (Math.exp(-(Math.PI ** 2) / (8 * 1.18 ** 2)) + Math.exp((-9 * Math.PI ** 2) / (8 * 1.18 ** 2)) + Math.exp((-25 * Math.PI ** 2) / (8 * 1.18 ** 2)))
+          - kolmogorovQ(1.18 + 1e-12)
+      );
+      let worstRise = 0;
+      let prev = kolmogorovQ(0.005);
+      for (let x = 0.006; x < 3; x += 0.001) {
+        const q = kolmogorovQ(x);
+        worstRise = Math.max(worstRise, q - prev);
+        prev = q;
+      }
+      return {
+        ok: seam < 1e-10 && worstRise <= 0,
+        detail: `seam gap ${seam.toExponential(1)}, worst rise ${worstRise.toExponential(1)}`,
+      };
+    },
+  },
+  {
+    name: 'the drawn curves are monotone: CDF up, survival down, from the first pixel',
+    category: 'numeric',
+    run() {
+      const o = compute(P).observables;
+      let bad = 0;
+      for (let i = 1; i < o.nullCdf.x.length; i++) {
+        if (o.nullCdf.y[i] < o.nullCdf.y[i - 1]) bad++;
+        if (o.survival.y[i] > o.survival.y[i - 1]) bad++;
+      }
+      return { ok: bad === 0, detail: `${bad} inversions over ${o.nullCdf.x.length} grid points` };
     },
   },
   {

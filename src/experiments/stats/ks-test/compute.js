@@ -66,9 +66,28 @@ export function ksStatistic(sorted, cdf) {
   return { D, at, lo, hi };
 }
 
-/** Kolmogorov tail Q(x) = P(sup > x) = 2·Σ (−1)^{k−1} e^{−2k²x²}, x > 0. */
+const SQRT_2PI = Math.sqrt(2 * Math.PI);
+
+// Kolmogorov tail Q(x) = P(sup > x).
+// TWO SERIES, ONE FUNCTION. The textbook alternating series
+// 2·Σ (−1)^{k−1} e^{−2k²x²} converges fast for large x but is numerically
+// USELESS below x ≈ 1: the terms decay so slowly that any truncation leaves
+// an oscillating remainder, which drew a visibly non-monotone CDF near the
+// origin. Jacobi's theta identity gives the dual expansion
+// K(x) = (√(2π)/x)·Σ e^{−(2k−1)²π²/(8x²)}, which converges in three terms
+// exactly where the other fails. Switch at 1.18 (Marsaglia's constant); the
+// harness checks the two branches meet there and that the result is monotone.
 export function kolmogorovQ(x) {
   if (x <= 0) return 1;
+  if (x < 1.18) {
+    let s = 0;
+    for (let k = 1; k <= 20; k++) {
+      const term = Math.exp((-(2 * k - 1) * (2 * k - 1) * Math.PI * Math.PI) / (8 * x * x));
+      s += term;
+      if (term < 1e-18) break;
+    }
+    return Math.min(1, Math.max(0, 1 - (SQRT_2PI / x) * s));
+  }
   let s = 0;
   for (let k = 1; k <= 100; k++) {
     const term = Math.exp(-2 * k * k * x * x);
@@ -78,9 +97,21 @@ export function kolmogorovQ(x) {
   return Math.min(1, Math.max(0, 2 * s));
 }
 
-/** Kolmogorov density k(x) = dK/dx = 8x·Σ (−1)^{k−1} k² e^{−2k²x²}. */
+/** Kolmogorov density k(x) = dK/dx — same two branches as the CDF. */
 export function kolmogorovDensity(x) {
   if (x <= 0) return 0;
+  if (x < 1.18) {
+    // d/dx of (√(2π)/x)·Σ e^{−a/x²}, a = (2k−1)²π²/8:
+    // (√(2π)/x²)·Σ e^{−a/x²}·(2a/x² − 1).
+    let s = 0;
+    for (let k = 1; k <= 20; k++) {
+      const a = ((2 * k - 1) * (2 * k - 1) * Math.PI * Math.PI) / 8;
+      const e = Math.exp(-a / (x * x));
+      s += e * ((2 * a) / (x * x) - 1);
+      if (e < 1e-18) break;
+    }
+    return Math.max(0, (SQRT_2PI / (x * x)) * s);
+  }
   let s = 0;
   for (let k = 1; k <= 100; k++) {
     const term = k * k * Math.exp(-2 * k * k * x * x);
