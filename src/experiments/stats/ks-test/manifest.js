@@ -1,5 +1,5 @@
 import { float, int, select } from '../../../core/fields.js';
-import { view, histogram, line, density, vline } from '../../../core/views.js';
+import { view, histogram, line, density, vline, hline } from '../../../core/views.js';
 
 /** @type {import('../../../core/types').ExperimentManifest} */
 export default {
@@ -25,6 +25,15 @@ finite-N scale √N + 0.12 + 0.11/√N, accurate to a few 1e-3 from N ≈ 20).
 The yellow line is the D of the sample on screen, and the p-value is the
 fraction of the null histogram to its right — the statline carries it twice,
 counted by Monte Carlo and read off the limit law, and the two agree.
+
+The fourth view integrates the third. The CDF of D — the Monte Carlo
+staircase against the limit curve — and its complement 1 − CDF, which IS
+the p-value as a function of the observed D. The yellow line at the
+sample's D crosses the purple survival curve at exactly height p, and the
+green horizontal marks the crossing: reading a p-value is finding one
+point on one curve, nothing more. The staircase is itself a sample being
+compared to a CDF, so the harness closes the loop and runs the KS test ON
+the M simulated D's against their own limit law — the meta-test passes.
 
 The remarkable theorem is that this scale is UNIVERSAL: D depends on the
 sample only through U = F(X), which is uniform under H₀, so the null
@@ -111,6 +120,22 @@ verified in the checks.`,
           vline('Dobs', { color: '#EDB120', dashed: true, label: 'D of the sample' }),
         ],
         axes: { x: 'D', y: 'density' },
+      })
+    ),
+    view(
+      'pvalue',
+      'CDF of D and the p-value',
+      line('nullCdf', {
+        color: '#D95319',
+        width: 2.5,
+        label: 'CDF (theory)',
+        overlays: [
+          line('nullEcdf', { color: '#0072BD', width: 2, label: 'CDF (Monte Carlo)' }),
+          line('survival', { color: '#7E2F8E', width: 2.5, label: '1 − CDF: the p-value' }),
+          vline('Dobs', { color: '#EDB120', dashed: true, label: 'D of the sample' }),
+          hline('pAsym', { color: '#77AC30', dashed: true, label: 'p' }),
+        ],
+        axes: { x: 'D', y: { label: 'probability', domain: [0, 1.05] } },
       })
     ),
   ],

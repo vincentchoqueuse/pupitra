@@ -181,6 +181,44 @@ export const checks = [
       return { ok: Math.abs(mean - 0.5) < tol, detail: `mean=${mean.toFixed(4)} (tol ${tol.toFixed(4)})` };
     },
   },
+  {
+    name: 'the p-value view is exact: survival + CDF = 1, crossing at pAsym, treads at k/M',
+    category: 'numeric',
+    run() {
+      const o = compute(P).observables;
+      let comp = 0;
+      for (let i = 0; i < o.survival.x.length; i++)
+        comp = Math.max(comp, Math.abs(o.survival.y[i] + o.nullCdf.y[i] - 1));
+      const cross = Math.abs(o.pAsym.value - kolmogorovQ(stephens(P.N) * o.Dobs.value));
+      const y = o.nullEcdf.y;
+      let treads = 0;
+      let ok = y[0] === 0 && y[y.length - 1] === 1 && y.length === 2 * P.M + 2;
+      for (let i = 1; i < y.length; i++) {
+        if (y[i] < y[i - 1] || o.nullEcdf.x[i] < o.nullEcdf.x[i - 1]) ok = false;
+        treads = Math.max(treads, Math.abs(y[i] * P.M - Math.round(y[i] * P.M)));
+      }
+      return {
+        ok: ok && comp === 0 && cross === 0 && treads < 1e-9,
+        detail: `|K+Q−1|=${comp}, |crossing−p|=${cross}, tread residual ${treads.toExponential(1)}`,
+      };
+    },
+  },
+  {
+    name: 'META-TEST: the M simulated D pass their own KS test against the limit law',
+    category: 'statistical',
+    run() {
+      // The null D's are themselves a sample with a hypothesized CDF K(c·d):
+      // run the experiment's own test on them. Under H₀-of-the-meta-test the
+      // p is uniform, so a fixed seed lands anywhere in (0, 1); the check
+      // asks it to clear 0.001 — a true mismatch of law drives it to 0.
+      const o = compute({ ...P, M: 4000 }).observables;
+      const cN = stephens(P.N);
+      const sorted = Float64Array.from(o.nullD).sort();
+      const Dmeta = ksStatistic(sorted, (d) => 1 - kolmogorovQ(cN * d)).D;
+      const pMeta = kolmogorovQ(stephens(4000) * Dmeta);
+      return { ok: pMeta > 0.001, detail: `D_meta=${Dmeta.toFixed(4)}, p_meta=${pMeta.toFixed(3)}` };
+    },
+  },
   standardChecks.determinism(compute, P, 'ecdf'),
   standardChecks.determinism(compute, P, 'nullD'),
 ];

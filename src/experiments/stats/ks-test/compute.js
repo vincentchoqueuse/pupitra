@@ -152,15 +152,38 @@ export function compute({ law, delta, N, M, seed }) {
   }
   const pMc = exceed / M;
 
-  // The limit law, drawn on the D axis: f_D(d) = c·k(c·d).
+  // The limit law, drawn on the D axis: f_D(d) = c·k(c·d) — and its two
+  // integrated readings, CDF K(c·d) and survival Q(c·d). The survival curve
+  // IS the p-value as a function of the observed D: the vline at D crosses
+  // it exactly at height Q(c·D) = pAsym, which the hline marks.
   const dMax = Math.max(2.2 / c, D * 1.25);
   const nx = new Float64Array(GRID);
   const ny = new Float64Array(GRID);
+  const ncdf = new Float64Array(GRID);
+  const nsurv = new Float64Array(GRID);
   for (let i = 0; i < GRID; i++) {
     const d = (dMax * i) / (GRID - 1);
     nx[i] = d;
     ny[i] = c * kolmogorovDensity(c * d);
+    nsurv[i] = kolmogorovQ(c * d);
+    ncdf[i] = 1 - nsurv[i];
   }
+
+  // The Monte Carlo CDF of D, as an exact staircase over the same axis —
+  // the experiment's own criterion examined with the experiment's own tools.
+  const sortedNull = Float64Array.from(nullD).sort();
+  const dx = new Float64Array(2 * M + 2);
+  const dy = new Float64Array(2 * M + 2);
+  dx[0] = 0;
+  dy[0] = 0;
+  for (let m = 0; m < M; m++) {
+    dx[2 * m + 1] = sortedNull[m];
+    dy[2 * m + 1] = m / M;
+    dx[2 * m + 2] = sortedNull[m];
+    dy[2 * m + 2] = (m + 1) / M;
+  }
+  dx[2 * M + 1] = dMax;
+  dy[2 * M + 1] = 1;
 
   const verdict = pMc < 0.05 ? 'reject H₀' : 'no evidence against H₀';
 
@@ -173,6 +196,9 @@ export function compute({ law, delta, N, M, seed }) {
       gap: { x: Float64Array.of(at, at), y: Float64Array.of(lo, hi) },
       nullD,
       nullDensity: { x: nx, y: ny },
+      nullCdf: { x: nx, y: ncdf },
+      survival: { x: nx, y: nsurv },
+      nullEcdf: { x: dx, y: dy },
       Dobs: { value: D, meta: { label: 'D', precision: 3 } },
       pMc: { value: pMc, meta: { label: 'p (Monte Carlo)', precision: 3 } },
       pAsym: { value: pAsym, meta: { label: 'p (Kolmogorov)', precision: 3 } },
